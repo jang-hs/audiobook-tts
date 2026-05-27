@@ -1,0 +1,213 @@
+.audiobook-tts-toolbar {
+  position: fixed;
+  bottom: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  font-size: 12px;
+  color: var(--text-normal);
+  user-select: none;
+  cursor: grab;
+}
+
+.audiobook-tts-toolbar:active { cursor: grabbing; }
+
+.audiobook-tts-toolbar.is-hidden { display: none; }
+
+.audiobook-tts-toolbar.is-dragging { transition: none; }
+
+.audiobook-tts-toolbar.is-dragged {
+  right: auto;
+  bottom: auto;
+  transform: none;
+}
+
+.audiobook-tts-toolbar .audiobook-tts-icon-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  padding: 4px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  box-shadow: none;
+}
+
+.audiobook-tts-toolbar .audiobook-tts-icon-btn:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.audiobook-tts-toolbar .audiobook-tts-icon-btn[data-loading="true"] {
+  color: var(--text-accent);
+  cursor: progress;
+}
+.audiobook-tts-toolbar .audiobook-tts-icon-btn[data-loading="true"] .svg-icon,
+.audiobook-tts-toolbar .audiobook-tts-icon-btn[data-loading="true"] svg {
+  animation: audiobook-tts-spin 1s linear infinite;
+}
+@keyframes audiobook-tts-spin {
+  to { transform: rotate(360deg); }
+}
+
+.audiobook-tts-toolbar .audiobook-tts-icon-btn .svg-icon,
+.audiobook-tts-toolbar .audiobook-tts-icon-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+
+.audiobook-tts-toolbar .audiobook-tts-progress {
+  color: var(--text-muted);
+  min-width: 90px;
+  font-variant-numeric: tabular-nums;
+  padding: 0 4px;
+}
+
+.audiobook-tts-toolbar .audiobook-tts-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--background-modifier-border);
+}
+
+/* Click-to-jump progress text */
+.audiobook-tts-toolbar .audiobook-tts-progress[data-action="jump"] {
+  cursor: pointer;
+}
+.audiobook-tts-toolbar .audiobook-tts-progress[data-action="jump"]:hover {
+  color: var(--text-normal);
+  text-decoration: underline;
+}
+
+/* Time display — mm:ss / mm:ss */
+.audiobook-tts-toolbar .audiobook-tts-time {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  padding: 0 2px;
+  min-width: 76px;
+}
+
+/* Playback-speed cycler button */
+.audiobook-tts-toolbar .audiobook-tts-speed {
+  background: transparent;
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  min-width: 36px;
+  text-align: center;
+}
+.audiobook-tts-toolbar .audiobook-tts-speed:hover {
+  color: var(--text-normal);
+  border-color: var(--background-modifier-border-hover);
+}
+
+/* Chunk-text ticker — second row, ellipsis truncate */
+.audiobook-tts-toolbar .audiobook-tts-ticker {
+  flex-basis: 100%;
+  margin-top: 4px;
+  padding: 4px 6px;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  max-width: 360px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.audiobook-tts-toolbar .audiobook-tts-ticker.is-hidden { display: none; }
+
+/* ---- Floating selection play button ---- */
+.audiobook-tts-selection-play {
+  position: fixed;
+  z-index: 10000;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.audiobook-tts-selection-play:hover {
+  filter: brightness(1.15);
+}
+
+.audiobook-tts-selection-play.is-hidden { display: none; }
+
+.audiobook-tts-selection-play .svg-icon,
+.audiobook-tts-selection-play svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.5;
+}
+
+/* ---- Settings table-order example ---- */
+.audiobook-tts-table-example {
+  margin: 16px 0 8px;
+  padding: 12px 14px;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.audiobook-tts-example-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-normal);
+}
+
+.audiobook-tts-example-table {
+  border-collapse: collapse;
+  margin-bottom: 10px;
+}
+
+.audiobook-tts-example-table th,
+.audiobook-tts-example-table td {
+  border: 1px solid var(--background-modifier-border);
+  padding: 4px 10px;
+  text-align: left;
+}
+
+.audiobook-tts-example-table th {
+  background: var(--background-modifier-hover);
+  font-weight: 600;
+}
+
+.audiobook-tts-example-outputs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-muted);
+}
+
+.audiobook-tts-example-outputs strong {
+  color: var(--text-normal);
+  margin-right: 4px;
+}

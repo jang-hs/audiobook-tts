@@ -1,0 +1,5 @@
+# Local plugin state — not for distribution
+data.json
+
+# OS
+.DS_Store
