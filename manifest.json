@@ -6,5 +6,6 @@
   "description": "Audiobook-style TTS for your notes — reads markdown aloud via a local OpenAI-compatible TTS server (e.g. OpenVox). Select any sentence to hear it via a quick play button, with chunk prefetching for gapless full-note playback, a draggable toolbar, table/parens/code filters, and optional WAV export.",
   "author": "jang-hs",
   "authorUrl": "https://github.com/jang-hs",
+  "fundingUrl": "https://buymeacoffee.com/jadez",
   "isDesktopOnly": true
 }
