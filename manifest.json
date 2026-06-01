@@ -1,6 +1,6 @@
 {
-  "id": "audiobook-tts",
-  "name": "Audiobook TTS",
+  "id": "narrate",
+  "name": "Narrate",
   "version": "0.2.0",
   "minAppVersion": "1.4.4",
   "description": "Reads your markdown notes aloud via a local OpenAI-compatible TTS server (e.g. OpenVox). Select a sentence for a quick play button, with chunk prefetching for gapless playback, a draggable toolbar, table/parens/code filters, and WAV export.",

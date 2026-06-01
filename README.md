@@ -1,4 +1,6 @@
-# Audiobook TTS for Obsidian
+# Narrate for Obsidian
+
+Audiobook-style TTS for your notes.
 
 Read any markdown note aloud through a local OpenAI-compatible TTS server. Gapless chunked playback, per-note resume, and a draggable mini-player — listen to your notes on a walk, while cooking, or just to rest your eyes.
 
@@ -73,13 +75,13 @@ Other Korean voices on OmniVoice: `Korean-Female-Jiwoo`, `Korean-Male-Hyunwoo`, 
 
 ### Manual
 
-1. Download `main.js`, `manifest.json`, and `styles.css` from the latest [release](https://github.com/jang-hs/audiobook-tts/releases).
-2. Copy them into `<vault>/.obsidian/plugins/audiobook-tts/` (create the folder if needed).
-3. Settings → Community plugins → reload and enable **Audiobook TTS**.
+1. Download `main.js`, `manifest.json`, and `styles.css` from the latest [release](https://github.com/jang-hs/obsidian-narrate/releases).
+2. Copy them into `<vault>/.obsidian/plugins/narrate/` (create the folder if needed).
+3. Settings → Community plugins → reload and enable **Narrate**.
 
 ### BRAT (pre-release)
 
-Install [BRAT](https://github.com/TfTHacker/obsidian42-brat), then add `jang-hs/audiobook-tts` as a beta plugin.
+Install [BRAT](https://github.com/TfTHacker/obsidian42-brat), then add `jang-hs/obsidian-narrate` as a beta plugin.
 
 ### Community plugin store
 
