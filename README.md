@@ -7,6 +7,7 @@ Read any markdown note aloud through a local OpenAI-compatible TTS server. Gaple
 A local OpenAI-compatible TTS server on `http://127.0.0.1:8000` (configurable).
 
 - **OpenVox (recommended, macOS)** — [openvoxai.com](https://openvoxai.com/). Free app that exposes the `/v1` endpoints this plugin uses. Install, launch, done.
+- **[ttsd](https://github.com/jang-hs/ttsd)** — my own self-hosted TTS server speaking the same `/v1` contract, with **no daily character limit**. Runs open-source backends (Kokoro, Chatterbox / Chatterbox Multilingual, Qwen3-TTS) with zero-shot voice cloning and up to 25 languages. Cross-platform (macOS MPS / Linux · Windows CUDA / CPU).
 - Any other server speaking the same `/v1` contract works too.
 
 ## Quick start
