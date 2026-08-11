@@ -268,53 +268,47 @@ class AudiobookTTSPlugin extends obsidian.Plugin {
     return !!this.sessionAborter;
   }
 
-  async readActiveNote() {
+  // Shared entry path for every read/generate command: busy guard → resolve
+  // the text → clean → speak. `fromCursor` slices the active editor from the
+  // cursor and anchors to no file, so that one-shot read can't taint the
+  // note's saved resume position or overwrite its WAV.
+  async run({ play, save, fromCursor }) {
     if (this.isBusy()) {
       new obsidian.Notice('Audiobook TTS: already preparing — press Stop to cancel.', 2500);
       return;
     }
-    const file = this.app.workspace.getActiveFile();
-    if (!file || file.extension !== 'md') {
-      new obsidian.Notice('Audiobook TTS: no active markdown file');
+    let file = this.app.workspace.getActiveFile();
+    let raw;
+    if (fromCursor) {
+      const view = this.app.workspace.getActiveViewOfType(obsidian.MarkdownView);
+      if (!view || !view.editor) {
+        new obsidian.Notice('Audiobook TTS: no active markdown file');
+        return;
+      }
+      raw = view.editor.getValue().slice(view.editor.posToOffset(view.editor.getCursor()));
+      file = null;
+    } else {
+      if (!file || file.extension !== 'md') {
+        new obsidian.Notice('Audiobook TTS: no active markdown file');
+        return;
+      }
+      raw = await this.app.vault.cachedRead(file);
+    }
+    const text = cleanMarkdown(raw, this.settings);
+    if (!text.trim()) {
+      new obsidian.Notice('Audiobook TTS: nothing to read after cleanup');
       return;
     }
     this.currentFile = file;
-    const raw = await this.app.vault.cachedRead(file);
-    const text = cleanMarkdown(raw, this.settings);
-    if (!text.trim()) {
-      new obsidian.Notice('Audiobook TTS: nothing to read after cleanup');
-      return;
-    }
     await this.awaitCooldown();
-    const startIdx = this.settings.autoResume ? this.getResumePosition(file.path) : 0;
-    await this.speak(text, { play: true, save: this.settings.saveAudio, startIdx });
+    const startIdx = file && play && this.settings.autoResume
+      ? this.getResumePosition(file.path) : 0;
+    await this.speak(text, { play, save, startIdx });
   }
 
-  async readFromCursor() {
-    if (this.isBusy()) {
-      new obsidian.Notice('Audiobook TTS: already preparing — press Stop to cancel.', 2500);
-      return;
-    }
-    const view = this.app.workspace.getActiveViewOfType(obsidian.MarkdownView);
-    if (!view || !view.editor) {
-      new obsidian.Notice('Audiobook TTS: no active markdown file');
-      return;
-    }
-    const editor = view.editor;
-    const cursor = editor.getCursor();
-    const offset = editor.posToOffset(cursor);
-    const raw = editor.getValue().slice(offset);
-    const text = cleanMarkdown(raw, this.settings);
-    if (!text.trim()) {
-      new obsidian.Notice('Audiobook TTS: nothing to read after cleanup');
-      return;
-    }
-    // Reading from cursor is intentionally one-shot — don't taint the
-    // saved resume position with this ad-hoc slice.
-    this.currentFile = null;
-    await this.awaitCooldown();
-    await this.speak(text, { play: true, save: false });
-  }
+  readActiveNote() { return this.run({ play: true, save: this.settings.saveAudio }); }
+  readFromCursor() { return this.run({ play: true, save: false, fromCursor: true }); }
+  generateActiveNote() { return this.run({ play: false, save: true }); }
 
   // ---- Resume positions ----
 
@@ -394,21 +388,10 @@ class AudiobookTTSPlugin extends obsidian.Plugin {
       new obsidian.Notice('Audiobook TTS: no active markdown file');
       return;
     }
-    const mc = this.app.metadataCache;
     // getBacklinksForFile returns a custom data structure; .data is a record
-    // keyed by source path. Older Obsidian versions exposed resolvedLinks
-    // instead, so fall back if needed.
-    let paths = [];
-    if (typeof mc.getBacklinksForFile === 'function') {
-      const bl = mc.getBacklinksForFile(cur);
-      if (bl && bl.data) paths = Object.keys(bl.data);
-    }
-    if (!paths.length && mc.resolvedLinks) {
-      paths = Object.entries(mc.resolvedLinks)
-        .filter(([_, targets]) => targets && targets[cur.path])
-        .map(([source]) => source);
-    }
-    const files = paths
+    // keyed by source path.
+    const bl = this.app.metadataCache.getBacklinksForFile(cur);
+    const files = Object.keys((bl && bl.data) || {})
       .map((p) => this.app.vault.getAbstractFileByPath(p))
       .filter((f) => f instanceof obsidian.TFile && f.extension === 'md')
       .sort((a, b) => a.basename.localeCompare(b.basename));
@@ -459,27 +442,6 @@ class AudiobookTTSPlugin extends obsidian.Plugin {
     }, 200);
   }
 
-  async generateActiveNote() {
-    if (this.isBusy()) {
-      new obsidian.Notice('Audiobook TTS: already preparing — press Stop to cancel.', 2500);
-      return;
-    }
-    const file = this.app.workspace.getActiveFile();
-    if (!file || file.extension !== 'md') {
-      new obsidian.Notice('Audiobook TTS: no active markdown file');
-      return;
-    }
-    this.currentFile = file;
-    const raw = await this.app.vault.cachedRead(file);
-    const text = cleanMarkdown(raw, this.settings);
-    if (!text.trim()) {
-      new obsidian.Notice('Audiobook TTS: nothing to generate after cleanup');
-      return;
-    }
-    await this.awaitCooldown();
-    await this.speak(text, { play: false, save: true });
-  }
-
   // Brief wait after a stop/abort so the server has time to release the
   // single-job lock from the request it was processing — otherwise the new
   // request will eat a string of 429s while the previous one finishes.
@@ -495,7 +457,7 @@ class AudiobookTTSPlugin extends obsidian.Plugin {
       : minWait;
     const elapsed = Date.now() - this.lastSessionEnd;
     if (this.lastSessionEnd > 0 && elapsed < scaled) {
-      await sleep(scaled - elapsed);
+      await sleepCancelable(scaled - elapsed);
     }
   }
 
@@ -966,18 +928,12 @@ class AudiobookTTSPlugin extends obsidian.Plugin {
     const MAX_ATTEMPTS = 20;
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       if (combined.aborted) throw makeAbortError();
-      let r;
-      try {
-        r = await fetch(`${this.settings.apiUrl}/audio/speech`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-          signal: combined,
-        });
-      } catch (e) {
-        if (isAbortError(e)) throw e;
-        throw e;
-      }
+      const r = await fetch(`${this.settings.apiUrl}/audio/speech`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: combined,
+      });
 
       if (r.status === 429) {
         // Exponential backoff: 1200ms → 2160 → 3888 → 6998 → cap 8000.
@@ -1148,7 +1104,9 @@ class PlaybackToolbar {
     this.timeEl.textContent = '';
     this.el.appendChild(this.timeEl);
 
-    this.el.appendChild(this.makeSep());
+    const sep = document.createElement('span');
+    sep.className = 'audiobook-tts-sep';
+    this.el.appendChild(sep);
 
     // Playback-speed cycler — click to advance through preset rates,
     // right-click to reset to 1.0x. Text updates live.
@@ -1189,12 +1147,6 @@ class PlaybackToolbar {
     btn.dataset.action = action;
     try { obsidian.setIcon(btn, icon); } catch (_) { btn.textContent = title; }
     return btn;
-  }
-
-  makeSep() {
-    const s = document.createElement('span');
-    s.className = 'audiobook-tts-sep';
-    return s;
   }
 
   isVisible() { return !this.el.classList.contains('is-hidden'); }
@@ -1323,9 +1275,6 @@ class PlaybackToolbar {
     if (loading) this.playBtn.setAttribute('data-loading', 'true');
     else this.playBtn.removeAttribute('data-loading');
   }
-
-  // Backward-compat wrapper (older callsites).
-  syncPlayButton(_paused) { this.syncPlayButtonState(); }
 
   setProgress(cur, total, label) {
     if (!this.progressEl) return;
@@ -1699,8 +1648,6 @@ function chunkText(text, maxLen) {
   return chunks.length ? chunks : [text];
 }
 
-function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
-
 // Rough wall-clock estimate for spoken playback. Calibrated against
 // Korean OmniVoice voices (~350 chars/min at 1.0x); English is closer to
 // 900 chars/min, so we bias by counting non-ASCII as one Korean syllable
@@ -1717,8 +1664,7 @@ function estimateSeconds(text, rate) {
   return beats / (charsPerSecond * r);
 }
 function estimateMinutes(text, rate) {
-  const m = estimateSeconds(text, rate) / 60;
-  return m < 1 ? Math.max(1, Math.round(m)) : Math.round(m);
+  return Math.max(1, Math.round(estimateSeconds(text, rate) / 60));
 }
 function formatTime(seconds) {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00';

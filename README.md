@@ -110,8 +110,7 @@ All requests go to the configured base URL (default `http://127.0.0.1:8000/v1`).
 
 | Method | Path | Used for |
 | --- | --- | --- |
-| `GET` | `/health` | Reachability check before any speech request. |
-| `GET` | `/models` | Populate the **Model** dropdown (the *Fetch* button). |
+| `GET` | `/models` | Populate the **Model** dropdown (the *Fetch* button), and the *Test connection* check. |
 | `POST` | `/models/{model}/load` | Optional warm-up before the first speech request. |
 | `GET` | `/models/{model}/languages` | Populate the **Language** dropdown. |
 | `GET` | `/models/{model}/voices?language={code}` | Populate the **Voice** dropdown for the chosen language. |
@@ -120,7 +119,7 @@ All requests go to the configured base URL (default `http://127.0.0.1:8000/v1`).
 
 Behavior:
 
-- **429** → exponential backoff (600 ms → cap 8 s, up to 20 attempts). One job runs at a time on OpenVox, so the plugin serializes prefetches and cancels in-flight requests when you skip or stop.
+- **429** → exponential backoff (1.2 s → cap 8 s, up to 20 attempts). One job runs at a time on OpenVox, so the plugin serializes prefetches and cancels in-flight requests when you skip or stop.
 - **Missing voice** → refetch voices for the same language and pick the first valid one instead of failing.
 - **Server unreachable** → single "local server unavailable" notice; notes are never touched and Obsidian stays responsive.
 - **Stop / new session** → all in-flight requests are cancelled via `AbortController` so the server doesn't keep working in the background.
